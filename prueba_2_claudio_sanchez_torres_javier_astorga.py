@@ -51,7 +51,7 @@ Normalización de datos para comparaciones significativas entre países
 # %pip uninstall -y xarray albumentations bigframes imbalanced-learn mlxtend jax albucore chex pymc scikit-image jaxlib blosc2
 
 # Reinstalar versiones específicas
-# %pip install numpy==1.23.5 pandas==2.2.2 scikit-learn==1.2.2 xgboost seaborn matplotlib IPython==7.34.0 pyarrow
+# %pip install numpy==1.23.5 pandas==2.2.2 scikit-learn==1.2.2 xgboost seaborn matplotlib IPython==7.34.0 pyarrow  requests plotly==5.18.0 nbformat==5.7.0
 
 # Librerías para análisis de datos
 import pandas as pd  # Manipulación de datos
@@ -79,6 +79,12 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import xgboost as xgb
+
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import nbformat
+from IPython.display import HTML, display
 
 # 2. Extracción de Datos
 
@@ -248,11 +254,12 @@ plt.show()
 """# Análisis de Correlación entre Métricas Principales COVID-19
 
 ## Variables Analizadas
-- **Casos Totales**: Número total de casos confirmados
-- **Recuperados**: Pacientes que superaron la enfermedad
-- **Casos Activos**: Casos que permanecen activos actualmente
-- **Casos Críticos**: Pacientes en estado crítico/UCI
-- **Fallecimientos**: Número total de muertes
+-  Recuperados y Casos Totales: 0.92
+-  Casos Críticos y Casos Totales: 0.64
+-  Casos Críticos y Recuperados: 0.70
+-  Fallecimientos y Casos Totales: 0.89
+-  Fallecimientos y Recuperados: 0.83
+-  Fallecimientos y Casos Críticos: 0.66
 
 ## Interpretación del Mapa de Calor
 El mapa de calor muestra la fuerza y dirección de las correlaciones entre las variables principales:
@@ -449,7 +456,7 @@ Estos datos indican concentraciones extraordinarias de casos que requieren atenc
 """
 
 # Estadísticas resumen
-print("\nEstadísticas Resumen:")
+print("\nEstadísticas Descriptiv, Resumen:")
 display(df.describe())
 
 """Es una herramienta muy útil para:
@@ -582,7 +589,7 @@ tree_model = DecisionTreeRegressor(
 tree_model.fit(X_train, y_train)
 
 # 2. Visualización del árbol
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(18,6))
 feature_names = X.columns.tolist()
 
 # Visualización del árbol con colores personalizados
@@ -743,7 +750,7 @@ def crear_dashboard_multinivel():
             'font': dict(size=24)
         },
         height=600,
-        width=800,
+        width=1000,
         template='plotly_white',
         hovermode='closest',
         updatemenus=[{
@@ -997,7 +1004,7 @@ def crear_dashboard_multinivel():
             'font': dict(size=24)
         },
         height=600,
-        width=800,
+        width=1000,
         template='plotly_white',
         showlegend=True,
         legend=dict(
@@ -1237,7 +1244,7 @@ def crear_dashboard_multinivel():
             'font': dict(size=24)
         },
         height=600,
-        width=800,
+        width=1000,
         template='plotly_white',
         showlegend=True,
         legend=dict(
@@ -1471,7 +1478,7 @@ def crear_dashboard_multinivel():
             'font': dict(size=24, color='#2c3e50')
         },
         height=600,
-        width=800,
+        width=1000,
         template='plotly_white',
         showlegend=True,
         legend=dict(
@@ -1782,7 +1789,7 @@ def crear_dashboard_multinivel():
             'font': dict(size=24, color='#2c3e50')
         },
         height=700,
-        width=800,
+        width=1000,
         template='plotly_white',
         showlegend=True,
         legend=dict(
@@ -2050,7 +2057,7 @@ def crear_dashboard_avanzado():
             'font': dict(size=24, color='#2c3e50')
         },
         height=700,
-        width=800,
+        width=1000,
         template='plotly_white',
         showlegend=True,
         legend=dict(
@@ -2170,25 +2177,43 @@ dashboard.show()
 - Integración de datos optimizada
 - Arquitectura modular escalable
 
-### RESUMEN
-El proyecto utiliza múltiples librerías de análisis de datos (pandas, numpy) y machine learning (scikit-learn, XGBoost).
+## Objetivo del Proyecto
+Análisis comprehensivo de datos COVID-19 a nivel mundial utilizando la API Disease.sh, implementando análisis multinivel (global, continental y por países) con modelos predictivos.
 
-Se implementan modelos de regresión incluyendo Árboles de Decisión, Random Forest y XGBoost.
+## Principales Hallazgos
+1. **Análisis Global**
+   - Distribución geográfica de casos
+   - Patrones de propagación
+   - Correlaciones entre variables clave
 
-El código incluye herramientas para preprocesamiento de datos como StandardScaler y train_test_split.
+2. **Análisis por Continentes**
+   - Variaciones regionales significativas
+   - Diferencias en tasas de pruebas
+   - Impacto poblacional
 
-Se incorporan métricas de evaluación como MAE, MSE y R2 para medir el rendimiento de los modelos.
+3. **Modelos Predictivos**
+   - XGBoost mostró el mejor rendimiento (R2: 0.5802)
+   - Random Forest destacó en validación cruzada (CV_Score: 0.7378)
 
-El proyecto integra visualizaciones con seaborn y matplotlib, además de capacidades de análisis estadístico con scipy.
+# Conclusiones
 
-### CONCLUSIÓN
-El proyecto está bien estructurado para realizar un análisis completo de machine learning.
+1. **Aspectos Técnicos**
+   - Implementación exitosa de modelos predictivos
+   - Análisis robusto de correlaciones
+   - Visualizaciones efectivas multinivel
 
-La combinación de diferentes modelos (DecisionTree, RandomForest, XGBoost) permite comparar y seleccionar el mejor enfoque.
+2. **Hallazgos Clave**
+   - Correlación significativa entre pruebas y casos detectados
+   - Patrones distintivos por continente
+   - Identificación efectiva de valores atípicos
 
-La inclusión de validación cruzada (KFold) sugiere un enfoque robusto para la evaluación de modelos.
+3. **Impacto y Aplicaciones**
+   - Herramienta útil para análisis epidemiológico
+   - Base para toma de decisiones en salud pública
+   - Capacidad predictiva para tendencias futuras
 
-Las herramientas de visualización permiten una comunicación efectiva de los resultados.
-
-El uso de métricas múltiples asegura una evaluación comprehensiva del rendimiento de los modelos.
+4. **Recomendaciones**
+   - Monitoreo continuo de tendencias
+   - Actualización periódica de modelos
+   - Expansión del análisis a variables adicionales
 """
