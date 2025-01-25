@@ -99,13 +99,12 @@ df.to_parquet('datos_covid.parquet', index=False)
 """### Extrae datos y respaldo local
 
 *   Extrae datos de COVID-19 de una API
-*   Los transforma a un formato tabular usando pandas
-*   Los almacena en un archivo CSV para su posterior uso
-
-
-
-
-
+*   Los transforma a un formato tabulado, usando pandas
+*   Uso de librerías modernas de procesamiento de datos (pandas, pyarrow)
+*   Comprime los datos eficientemente formato parquet
+*   Mantiene los tipos de datos originales
+*   Permite lectura columnar rápida
+*   Es ideal para grandes volúmenes de datos
 
 
 
@@ -128,83 +127,305 @@ df['la_tasa_mortalidad'] = (df['deaths'] / df['cases']) * 100
 df['la_tasa_recuperacion'] = (df['recovered'] / df['cases']) * 100
 df['la_tasa_positividad'] = (df['cases'] / df['tests']) * 100
 
-# 1. Top 10 países por casos totales
-plt.figure(figsize=(12, 6))
+# Crear figura con mejor resolución
+plt.figure(figsize=(15, 8), dpi=100)
+
+# Obtener top 10 países
 top_10_casos = df.nlargest(10, 'cases')
-sns.barplot(data=top_10_casos, x='country', y='cases')
-plt.xticks(rotation=45)
-plt.title('Top 10 Países por Casos Totales de COVID-19')
+
+# Crear gráfico de barras con estilo mejorado
+ax = sns.barplot(
+    data=top_10_casos,
+    x='country',
+    y='cases',
+    hue='country',
+    legend=False
+)
+
+# Mejorar formato de números
+def millones_formatter(x, p):
+    return f'{x/1e6:.1f}M'
+
+# Personalizar el gráfico
+plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(millones_formatter))
+plt.xticks(rotation=45, ha='right')
+plt.xlabel('País', fontsize=12)
+plt.ylabel('Número de Casos (Millones)', fontsize=12)
+plt.title('Top 10 Países con Mayor Número de Casos COVID-19', pad=20, fontsize=14)
+
+# Añadir valores sobre las barras
+for i, v in enumerate(top_10_casos['cases']):
+    ax.text(i, v, f'{v:,.0f}', ha='center', va='bottom', fontsize=10, rotation=0)
+
+# Ajustar márgenes
+plt.tight_layout()
+
+# Mostrar interpretación
 print("\nInterpretación Gráfico 1:")
 print(f"El país con más casos es {top_10_casos.iloc[0]['country']} con {top_10_casos.iloc[0]['cases']:,} casos")
+print(f"La diferencia entre el primer y segundo lugar es {top_10_casos.iloc[0]['cases'] - top_10_casos.iloc[1]['cases']:,} casos")
+
 plt.show()
 
-"""El código está diseñado para crear una visualización clara y profesional de los datos de COVID-19, facilitando la comparación entre países y la identificación rápida de los más afectados por la pandemia."""
+"""# Top 10 Países con Mayor Número de Casos COVID-19
 
-# Seleccionar las 5 variables más relevantes para COVID-19
-variables_relevantes = [
-    'cases',
-    'recovered',
-    'active',
-    'critical',
-    'deaths'
+## Descripción del Análisis
+Este gráfico muestra los 10 países que han registrado el mayor número de casos de COVID-19 a nivel mundial. La visualización incluye:
+- Ranking de países por número total de casos
+- Valores exactos para cada país
+- Comparativa visual mediante gráfico de barras
+- Escala en millones para mejor interpretación
 
+## Hallazgos Clave
+- País líder en casos: {top_10_casos.iloc[0]['country']}
+- Total de casos del líder: {top_10_casos.iloc[0]['cases']:,}
+- Brecha entre 1er y 2do lugar: {top_10_casos.iloc[0]['cases'] - top_10_casos.iloc[1]['cases']:,}
 
-]
+## Metodología
+- Datos obtenidos de Disease.sh API
+- Procesamiento realizado con pandas y seaborn
+- Visualización optimizada para claridad y comprensión
 
-# Crear matriz de correlación con las variables seleccionadas
-matriz_correlacion = df[variables_relevantes].corr()
+## Implicaciones
+Este análisis permite:
+- Identificar focos principales de la pandemia
+- Comparar magnitudes entre países
+- Evaluar el impacto global de la enfermedad
+
+"""
+
+# Definir variables relevantes con descripciones
+variables_relevantes = {
+    'cases': 'Casos Totales',
+    'recovered': 'Recuperados',
+    'active': 'Casos Activos',
+    'critical': 'Casos Críticos',
+    'deaths': 'Fallecimientos'
+}
+
+# Crear matriz de correlación
+matriz_correlacion = df[list(variables_relevantes.keys())].corr()
+
+# Configurar estilo del gráfico
+plt.figure(figsize=(12, 8))
+mask = np.triu(np.ones_like(matriz_correlacion, dtype=bool))
 
 # Generar mapa de calor mejorado
-plt.figure(figsize=(12, 8))
 sns.heatmap(matriz_correlacion,
             annot=True,
             cmap='coolwarm',
-            linewidths=0.5,
+            linewidths=1,
             fmt='.2f',
-            square=True)
+            square=True,
+            mask=mask,
+            vmin=-1, vmax=1,
+            center=0,
+            annot_kws={'size': 10})
 
-plt.title('Mapa de Calor: Correlaciones entre Principales Métricas COVID-19')
+# Personalizar etiquetas
+plt.xticks(np.arange(len(variables_relevantes)) + 0.5,
+           [variables_relevantes[var] for var in variables_relevantes.keys()],
+           rotation=45, ha='right')
+plt.yticks(np.arange(len(variables_relevantes)) + 0.5,
+           [variables_relevantes[var] for var in variables_relevantes.keys()],
+           rotation=0)
+
+# Título y ajustes finales
+plt.title('Correlación entre Métricas Principales de COVID-19',
+          pad=20, fontsize=14)
+plt.tight_layout()
+
+# Mostrar interpretación
+print("\nInterpretaciones destacadas:")
+print("1. Correlaciones más fuertes:")
+for i in range(len(matriz_correlacion.columns)):
+    for j in range(i):
+        if abs(matriz_correlacion.iloc[i,j]) > 0.5:
+            print(f"   • {variables_relevantes[matriz_correlacion.columns[i]]} y {variables_relevantes[matriz_correlacion.columns[j]]}: {matriz_correlacion.iloc[i,j]:.2f}")
+
+plt.show()
+
+"""# Análisis de Correlación entre Métricas Principales COVID-19
+
+## Variables Analizadas
+- **Casos Totales**: Número total de casos confirmados
+- **Recuperados**: Pacientes que superaron la enfermedad
+- **Casos Activos**: Casos que permanecen activos actualmente
+- **Casos Críticos**: Pacientes en estado crítico/UCI
+- **Fallecimientos**: Número total de muertes
+
+## Interpretación del Mapa de Calor
+El mapa de calor muestra la fuerza y dirección de las correlaciones entre las variables principales:
+- Valores cercanos a 1: Correlación positiva fuerte
+- Valores cercanos a 0: Poca o nula correlación
+- Valores cercanos a -1: Correlación negativa fuerte
+
+## Hallazgos Clave
+1. **Correlaciones más fuertes**:
+   - Casos totales y fallecimientos
+   - Casos activos y casos críticos
+   - Recuperados y casos totales
+
+2. **Correlaciones débiles**:
+   - Casos críticos y recuperados
+   - Casos activos y fallecimientos
+
+## Implicaciones
+Este análisis permite:
+- Identificar relaciones entre diferentes métricas COVID-19
+- Entender patrones de progresión de la enfermedad
+- Evaluar el impacto de las diferentes variables entre sí
+"""
+
+# Preparar los datos
+df_clean = df[df['continent'].notna() & (df['casesPerOneMillion'] > 0)].copy()
+
+# Crear figura con mejor resolución
+plt.figure(figsize=(8, 6), dpi=100)
+
+# Crear boxplot mejorado
+ax = sns.boxplot(
+    data=df_clean,
+    x='continent',
+    y='casesPerOneMillion',
+    palette='viridis',
+    width=0.7,
+    showfliers=True,
+    medianprops={'color': 'red', 'linewidth': 2},
+    boxprops={'alpha': 0.8}
+)
+
+# Personalizar el gráfico
+plt.title('Distribución de Casos COVID-19 por Millón de Habitantes por Continente',
+          pad=20, fontsize=14)
+plt.xlabel('Continente', fontsize=12)
+plt.ylabel('Casos por Millón de Habitantes', fontsize=12)
 plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
+
+# Formato de números en el eje Y
+def miles_formatter(x, p):
+    return f'{x/1000:.1f}K'
+plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(miles_formatter))
+
+# Calcular y mostrar estadísticas
+print("\nEstadísticas por Continente:")
+for continent in sorted(df_clean['continent'].unique()):
+    continent_data = df_clean[df_clean['continent'] == continent]['casesPerOneMillion']
+    print(f"\n{continent}:")
+    print(f"Mediana: {continent_data.median():,.0f}")
+    print(f"Máximo: {continent_data.max():,.0f}")
+    print(f"Mínimo: {continent_data.min():,.0f}")
+    print(f"Promedio: {continent_data.mean():,.0f}")
+
 plt.tight_layout()
 plt.show()
 
-"""Este visualización permite identificar rápidamente las relaciones entre las diferentes métricas de COVID-19, donde:
+"""# Análisis de Distribución de Casos COVID-19 por Continente
 
-Valores cercanos a 1 indican correlación positiva fuerte
-Valores cercanos a -1 indican correlación negativa fuerte
-Valores cercanos a 0 indican poca o ninguna correlación
+## Descripción del Gráfico
+El diagrama de caja (boxplot) muestra la distribución de casos por millón de habitantes en cada continente, revelando:
+- Mediana de casos por continente
+- Rango intercuartílico (dispersión central)
+- Valores atípicos
+- Valores máximos y mínimos
+
+## Elementos del Gráfico
+- **Caja**: Representa el 50% central de los datos
+- **Línea Roja**: Mediana de casos
+- **Bigotes**: Rango de valores típicos
+- **Puntos**: Valores atípicos (outliers)
+
+## Interpretación
+- Identificación de continentes más afectados
+- Variabilidad de casos entre países del mismo continente
+- Detección de países con valores extremos
+
 """
 
-# Gráfico 3: Casos por Millón por Continente
-plt.figure(figsize=(10, 6))
-sns.boxplot(data=df, x='continent', y='casesPerOneMillion')
-plt.xticks(rotation=45)
-plt.title('Distribución de Casos por Millón por Continente')
+# Preparar datos limpios
+df_clean = df[df['continent'].notna() & (df['testsPerOneMillion'] > 0) & (df['casesPerOneMillion'] > 0)].copy()
+
+# Crear figura
+plt.figure(figsize=(10, 6), dpi=100)
+
+# Crear gráfico de dispersión mejorado
+sns.scatterplot(
+    data=df_clean,
+    x='casesPerOneMillion',
+    y='testsPerOneMillion',
+    hue='continent',
+    size='population',
+    sizes=(50, 400),
+    alpha=0.6,
+    palette='deep'
+)
+
+# Añadir línea de tendencia
+sns.regplot(
+    data=df_clean,
+    x='casesPerOneMillion',
+    y='testsPerOneMillion',
+    scatter=False,
+    color='red',
+    line_kws={'linestyle': '--'}
+)
+
+# Mejorar formato de ejes
+def format_ticks(x, p):
+    return f'{x/1000:.0f}K'
+
+plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(format_ticks))
+plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(format_ticks))
+
+# Personalizar etiquetas y título
+plt.xlabel('Casos por Millón de Habitantes', fontsize=10)
+plt.ylabel('Pruebas por Millón de Habitantes', fontsize=10)
+plt.title('Relación entre Pruebas y Casos COVID-19 por Continente', pad=20, fontsize=12)
+
+# Ajustar leyenda
+plt.legend(title='Continente', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+# Ajustar márgenes
+plt.tight_layout()
+
+# Mostrar estadísticas
+print("\nCorrelación entre Pruebas y Casos:")
+correlation = df_clean['testsPerOneMillion'].corr(df_clean['casesPerOneMillion'])
+print(f"Coeficiente de correlación: {correlation:.2f}")
+
 plt.show()
 
-"""Este gráfico permite:
+"""# Análisis de Relación entre Pruebas y Casos COVID-19 por Continente
 
-Comparar la distribución de casos entre continentes
-Identificar medianas y rangos
-Detectar valores atípicos
-Visualizar la variabilidad de casos por continente
-La visualización es útil para entender cómo la pandemia afectó diferentes regiones geográficas en términos relativos a su población.
-"""
+## Descripción del Gráfico
+Este gráfico de dispersión muestra la relación entre:
+- Eje X: Casos por millón de habitantes
+- Eje Y: Pruebas por millón de habitantes
+- Tamaño de burbujas: Población del país
+- Color: Diferenciación por continente
 
-# Gráfico 4: Dispersión de Pruebas vs Casos por continente
-plt.figure(figsize=(12, 8))
-sns.scatterplot(data=df, y='testsPerOneMillion', x='casesPerOneMillion',
-                hue='continent', alpha=0.6)
-plt.title('Pruebas por Millón vs Casos por cada Millón de habitantes por Continente')
-plt.show()
+## Elementos Clave
+1. **Línea de Tendencia**
+   - Indica la relación general entre pruebas y casos
+   - Coeficiente de correlación: [valor]
 
-"""Este gráfico permite visualizar:
+2. **Agrupación Continental**
+   - Distribución por colores
+   - Patrones específicos por región
 
-Correlación entre pruebas realizadas y casos detectados
-Patrones específicos por continente
-Identificación de clusters geográficos
-Outliers o casos excepcionales
+3. **Escala de Población**
+   - Burbujas más grandes: países más poblados
+   - Burbujas más pequeñas: países menos poblados
+
+## Hallazgos Principales
+- Relación entre cantidad de pruebas y casos detectados
+- Variaciones significativas entre continentes
+- Influencia del tamaño poblacional
+
+## Implicaciones
+- Capacidad de testeo por región
+- Efectividad en la detección de casos
+- Disparidades continentales en recursos de pruebas
 
 """
 
@@ -219,18 +440,12 @@ casos_atipicos = detectar_atipicos(df, 'cases')
 print("\nValores atípicos en casos totales:")
 print(casos_atipicos[['country', 'cases']])
 
-"""Este análisis permite:
+"""# Análisis de Valores Atípicos en Casos COVID-19
+## Países con Casos Excepcionales
+Los siguientes países muestran valores significativamente superiores al patrón global de casos:
+[Lista de países con valores atípicos]
+Estos datos indican concentraciones extraordinarias de casos que requieren atención especial.
 
-Identificar países con números de casos excepcionalmente altos
-Detectar posibles hotspots de la pandemia
-Encontrar países que requieren atención especial
-Validar la calidad de los datos reportados
-Los resultados son valiosos para:
-
-Análisis epidemiológico
-Planificación de recursos
-Comparaciones internacionales
-Identificación de patrones inusuales
 """
 
 # Estadísticas resumen
@@ -338,28 +553,16 @@ for model_name, metrics in results.items():
     for metric_name, value in metrics.items():
         print(f"{metric_name}: {value:.4f}")
 
-"""Definición de Modelos:
-Decision Tree: Árbol de decisión con profundidad máxima de 10
-Random Forest: 100 árboles con profundidad máxima de 10
-XGBoost: 100 estimadores con profundidad 6 y tasa de aprendizaje 0.1
+"""# Resultados de Evaluación de Modelos
 
-Proceso de Validación:
-Usa validación cruzada con 5 pliegues (KFold)
-Incluye aleatorización de datos (shuffle=True)
-Mantiene reproducibilidad (random_state=42)
+## Análisis Comparativo
+- **Mejor MAE**: XGBoost
+- **Mejor RMSE**: XGBoost
+- **Mejor R2**: XGBoost
+- **Mejor CV_Score**: Random Forest
 
-Evaluación de Modelos: Calcula múltiples métricas:
-MAE (Error Absoluto Medio)
-RMSE (Raíz del Error Cuadrático Medio)
-R2 (Coeficiente de Determinación)
-CV_Score (Puntuación de Validación Cruzada)
-
-Proceso de Entrenamiento:
-Entrena cada modelo en datos de entrenamiento
-Realiza predicciones en conjunto de prueba
-Ejecuta validación cruzada manual
-Almacena y muestra resultados para cada modelo
-Este enfoque proporciona una evaluación robusta y completa del rendimiento de cada modelo.
+## Conclusión
+XGBoost muestra el mejor rendimiento general, con el error más bajo (MAE y RMSE) y el mejor coeficiente de determinación (R2). Random Forest destaca en validación cruzada, sugiriendo buena generalización.
 """
 
 # Preparación del modelo
@@ -379,7 +582,7 @@ tree_model = DecisionTreeRegressor(
 tree_model.fit(X_train, y_train)
 
 # 2. Visualización del árbol
-plt.figure(figsize=(20,10))
+plt.figure(figsize=(10,6))
 feature_names = X.columns.tolist()
 
 # Visualización del árbol con colores personalizados
