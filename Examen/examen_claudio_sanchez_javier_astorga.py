@@ -8,11 +8,50 @@ Original file is located at
 
 <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Logo_DuocUC.svg/2560px-Logo_DuocUC.svg.png' width=50%, height=20%>
 
-# Análisis de Datos Meteorológicos de Australia
+# Análisis Meteorológico de Australia
+## Contexto
+Este proyecto analiza datos meteorológicos de Australia para predecir patrones climáticos y apoyar la toma de decisiones. Los datos provienen de múltiples estaciones meteorológicas y cubren variables como temperatura, precipitaciones, viento y humedad.
 
-    ## 1. Introducción y Configuración
+## Propósito
+- Identificar patrones climáticos
+- Predecir probabilidades de lluvia
+- Analizar tendencias estacionales
+- Apoyar decisiones en agricultura y planificación urbana
 
-    Este notebook analiza datos meteorológicos de Australia para predecir la probabilidad de lluvia. Los datos provienen de múltiples estaciones meteorológicas y contienen mediciones diarias de variables climáticas.
+1.1 Exploración, limpieza y transformación de datos
+- Carga de datos meteorológicos de Australia
+- Preprocesamiento con pandas y numpy
+- Transformación de variables temporales y numéricas
+
+1.2 Desarrollo en Jupyter Notebook
+- Implementación del análisis completo
+- Uso de bibliotecas científicas (pandas, numpy, sklearn)
+- Visualizaciones interactivas con plotly
+
+1.3 Análisis organizacional
+- Estudio del contexto meteorológico australiano
+- Evaluación de variables climáticas disponibles
+- Identificación de patrones estacionales
+
+1.4 Análisis exploratorio (EDA)
+- Dashboard interactivo con múltiples vistas
+- Análisis de temperaturas y precipitaciones
+- Correlaciones entre variables meteorológicas
+
+1.5 Generación de información útil
+- Patrones climáticos identificados
+- Tendencias temporales
+- Relaciones entre variables clave
+
+1.6 Evaluación de algoritmos
+- Modelos de predicción de lluvia
+- Sistema de reglas de trading
+- Análisis de series temporales
+
+1.7 Métricas de evaluación
+- Precisión de predicciones
+- Validación de modelos
+- Comparación de rendimiento
 """
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -732,39 +771,350 @@ dashboard.write_html("dashboard_meteorologico.html")
 - **Correlaciones Significativas**
   - Umbrales > 0.3
   - Relaciones entre variables principales
+"""
 
-## Conclusiones y Recomendaciones
-### Conclusiones Principales
+# Algoritmos no supervisados (K-means para patrones climáticos):
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
-#### 1. Patrones Temporales
-- Marcada estacionalidad en temperaturas y precipitaciones
-- Variaciones significativas entre estaciones del año
-- Tendencias climáticas identificables a lo largo de los años
+# Preparación de datos para clustering
+features_clustering = ['MinTemp', 'MaxTemp', 'Rainfall', 'Humidity9am', 'Humidity3pm']
+X_cluster = df[features_clustering]
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_cluster)
 
-#### 2. Correlaciones Climáticas
-- Fuerte relación entre temperaturas máximas y mínimas
-- Patrones de precipitación predecibles por estación
-- Influencia de variables meteorológicas en predicción de lluvia
+# Aplicar K-means
+kmeans = KMeans(n_clusters=4, random_state=42)
+df['Cluster'] = kmeans.fit_predict(X_scaled)
 
-#### 3. Análisis Predictivo
-- Variables más influyentes identificadas
-- Potencial para predicción de lluvia
-- Patrones estacionales consistentes
+# Visualización de clusters
+plt.figure(figsize=(12, 8))
+plt.scatter(df['MinTemp'], df['MaxTemp'], c=df['Cluster'], cmap='viridis')
+plt.title('Clusters Climáticos')
+plt.xlabel('Temperatura Mínima')
+plt.ylabel('Temperatura Máxima')
+plt.show()
 
-### Recomendaciones
+"""# Análisis de Patrones Climáticos usando K-means
 
-#### 1. Mejoras en el Análisis
-- Incorporar más variables meteorológicas
-- Ampliar el análisis temporal
-- Profundizar en patrones locales por ubicación
+## Descripción
+Este análisis utiliza el algoritmo K-means para identificar patrones naturales en los datos meteorológicos de Australia, agrupando condiciones climáticas similares en clusters.
 
-#### 2. Aplicaciones Prácticas
-- Desarrollar sistema de alertas tempranas
-- Implementar predicciones automatizadas
-- Crear dashboard interactivo para usuarios finales
+## Variables Utilizadas
+- MinTemp: Temperatura mínima
+- MaxTemp: Temperatura máxima
+- Rainfall: Precipitaciones
+- Humidity9am: Humedad a las 9am
+- Humidity3pm: Humedad a las 3pm
 
-#### 3. Próximos Pasos
-- Integrar datos en tiempo real
-- Refinar modelos predictivos
-- Expandir análisis geográfico
+## Proceso de Análisis
+
+### 1. Preparación de Datos
+- Selección de características relevantes para el clustering
+- Normalización de datos usando StandardScaler para equilibrar las escalas
+
+### 2. Aplicación de K-means
+- Número de clusters: 4 (representando patrones climáticos principales)
+- Random state: 42 (para reproducibilidad)
+- Asignación de clusters a cada observación
+
+### 3. Visualización
+- Gráfico de dispersión 2D
+- Ejes: Temperatura Mínima vs Temperatura Máxima
+- Colores: Representan diferentes clusters climáticos
+- Paleta: 'viridis' para mejor distinción visual
+
+## Interpretación de Resultados
+Los clusters resultantes pueden interpretarse como:
+1. Cluster 0: Condiciones frías y secas
+2. Cluster 1: Condiciones templadas
+3. Cluster 2: Condiciones cálidas y húmedas
+4. Cluster 3: Condiciones extremas
+
+## Aplicaciones Prácticas
+- Planificación de recursos según patrones climáticos
+- Identificación de condiciones climáticas típicas
+- Apoyo a decisiones agrícolas y de gestión ambiental
+
+"""
+
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+
+# Seleccionar características para el modelo
+caracteristicas = ['MinTemp', 'MaxTemp', 'Rainfall', 'WindSpeed9am', 'WindSpeed3pm',
+                  'Humidity9am', 'Humidity3pm', 'Pressure9am', 'Pressure3pm', 'Temp9am', 'Temp3pm']
+
+X = df[caracteristicas]
+y = (df['RainTomorrow'] == 'Yes').astype(int)
+
+# Dividir los datos
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Modelo Random Forest
+rf_model = RandomForestClassifier(random_state=42)
+rf_model.fit(X_train, y_train)
+y_pred = rf_model.predict(X_test)
+
+# Métricas detalladas
+print("\nMétricas de Evaluación Detalladas:")
+print("\nMatriz de Confusión:")
+print(confusion_matrix(y_test, y_pred))
+print("\nReporte de Clasificación:")
+print(classification_report(y_test, y_pred))
+
+# Importancia de características
+feature_importance = pd.DataFrame({
+    'feature': caracteristicas,
+    'importance': rf_model.feature_importances_
+}).sort_values('importance', ascending=False)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='importance', y='feature', data=feature_importance)
+plt.title('Importancia de Variables en la Predicción')
+plt.show()
+
+"""# Modelo Predictivo de Lluvia usando Random Forest
+
+## Descripción
+Este análisis implementa un modelo de Random Forest para predecir la probabilidad de lluvia del día siguiente, utilizando variables meteorológicas clave.
+
+## Variables Predictoras
+- Temperaturas (MinTemp, MaxTemp, Temp9am, Temp3pm)
+- Viento (WindSpeed9am, WindSpeed3pm)
+- Humedad (Humidity9am, Humidity3pm)
+- Presión atmosférica (Pressure9am, Pressure3pm)
+- Precipitación (Rainfall)
+
+## Metodología
+
+### 1. Preparación de Datos
+- División del dataset: 80% entrenamiento, 20% prueba
+- Variable objetivo: RainTomorrow (binaria 0/1)
+- Random state: 42 para reproducibilidad
+
+### 2. Entrenamiento del Modelo
+- Algoritmo: Random Forest Classifier
+- Hiperparámetros por defecto
+- Entrenamiento sobre datos de entrenamiento
+
+### 3. Evaluación del Modelo
+
+#### Métricas Principales
+- Matriz de Confusión: Visualización de predicciones correctas vs incorrectas
+- Reporte de Clasificación:
+  - Precisión
+  - Recall
+  - F1-Score
+  - Support
+
+#### Importancia de Variables
+- Ranking de variables más influyentes
+- Visualización mediante gráfico de barras
+- Interpretación de impacto relativo
+
+## Aplicaciones Prácticas
+- Predicción de lluvia para planificación
+- Identificación de variables climáticas clave
+- Apoyo a decisiones agrícolas y urbanas
+"""
+
+def generar_recomendaciones():
+    print("\nRECOMENDACIONES ESTRATÉGICAS:")
+
+    # Análisis por estación
+    estacion_lluvia = df.groupby('Estacion')['Rainfall'].mean()
+    estacion_max = estacion_lluvia.idxmax()
+    print(f"\n1. Gestión de Recursos Hídricos:")
+    print(f"- La estación {estacion_max} presenta mayor precipitación con {estacion_lluvia[estacion_max]:.2f}mm")
+    print("- Recomendación: Implementar sistemas de recolección de agua en esta temporada")
+
+    # Análisis de temperaturas extremas
+    temp_extremas = df.groupby('Location')[['MinTemp', 'MaxTemp']].agg(['min', 'max'])
+    ubicacion_mas_extrema = temp_extremas['MaxTemp']['max'].idxmax()
+    temp_max = temp_extremas.loc[ubicacion_mas_extrema, ('MaxTemp','max')]
+    temp_min = temp_extremas.loc[ubicacion_mas_extrema, ('MinTemp','min')]
+
+    print("\n2. Planificación Urbana:")
+    print(f"- Ubicación con mayor variación térmica: {ubicacion_mas_extrema}")
+    print(f"- Rango de temperatura: {temp_min:.1f}°C a {temp_max:.1f}°C")
+    print("- Recomendación: Implementar sistemas de climatización adaptativa")
+
+    # Patrones de viento
+    vientos_fuertes = df[df['WindSpeed3pm'] > df['WindSpeed3pm'].quantile(0.95)]
+    ubicaciones_viento = vientos_fuertes['Location'].value_counts().head(3)
+
+    print("\n3. Energía Renovable:")
+    print("Top 3 ubicaciones para energía eólica:")
+    for ubicacion, dias in ubicaciones_viento.items():
+        print(f"- {ubicacion}: {dias} días con vientos óptimos")
+    print(f"Total días con condiciones ideales: {len(vientos_fuertes)}")
+
+# Ejecutar las recomendaciones
+generar_recomendaciones()
+
+def crear_dashboard_recomendaciones():
+    # Crear la estructura del dashboard
+    fig = make_subplots(
+        rows=3, cols=2,
+        specs=[
+            [{"type": "bar"}, {"type": "indicator"}],
+            [{"type": "heatmap"}, {"type": "bar"}],
+            [{"colspan": 2}, None],
+        ],
+        subplot_titles=(
+            "Precipitación por Estación", "Temperatura Máxima",
+            "Mapa de Calor de Temperaturas", "Top Ubicaciones para Energía Eólica",
+            "Patrones de Viento a lo Largo del Tiempo"
+        ),
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1
+    )
+
+    # 1. Precipitación por Estación
+    estacion_lluvia = df.groupby('Estacion')['Rainfall'].mean()
+    fig.add_trace(
+        go.Bar(
+            x=estacion_lluvia.index,
+            y=estacion_lluvia.values,
+            name='Precipitación Media',
+            marker_color='lightblue'
+        ),
+        row=1, col=1
+    )
+
+    # 2. Indicador de Temperatura Máxima
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number",
+            value=df['MaxTemp'].max(),
+            title={'text': "Temperatura Máxima"},
+            gauge={'axis': {'range': [0, df['MaxTemp'].max() + 5]},
+                   'bar': {'color': "orangered"}}
+        ),
+        row=1, col=2
+    )
+
+    # 3. Mapa de Calor de Temperaturas
+    temp_extremas = df.groupby('Location')[['MinTemp', 'MaxTemp']].mean()
+    fig.add_trace(
+        go.Heatmap(
+            z=temp_extremas[['MinTemp', 'MaxTemp']].values,
+            x=['Min Temp', 'Max Temp'],
+            y=temp_extremas.index,
+            colorscale='RdBu_r'
+        ),
+        row=2, col=1
+    )
+
+    # 4. Top Ubicaciones para Energía Eólica
+    vientos_fuertes = df[df['WindSpeed3pm'] > df['WindSpeed3pm'].quantile(0.95)]
+    ubicaciones_viento = vientos_fuertes['Location'].value_counts().head(5)
+    fig.add_trace(
+        go.Bar(
+            x=ubicaciones_viento.values,
+            y=ubicaciones_viento.index,
+            orientation='h',
+            marker_color='lightgreen',
+            name='Días con Vientos Óptimos'
+        ),
+        row=2, col=2
+    )
+
+    # 5. Patrones de Viento
+    viento_tiempo = df.groupby('Mes')['WindSpeed3pm'].mean()
+    fig.add_trace(
+        go.Scatter(
+            x=viento_tiempo.index,
+            y=viento_tiempo.values,
+            mode='lines+markers',
+            name='Velocidad Media del Viento',
+            line=dict(color='darkblue', width=2)
+        ),
+        row=3, col=1
+    )
+
+    # Actualizar diseño
+    fig.update_layout(
+        title={
+            'text': "Dashboard de Recomendaciones Estratégicas",
+            'y':0.95,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': dict(size=24)
+        },
+        height=1200,
+        width=1400,
+        showlegend=True,
+        template='plotly_white'
+    )
+
+    # Actualizar ejes
+    fig.update_xaxes(title_text="Estación", row=1, col=1)
+    fig.update_yaxes(title_text="Precipitación (mm)", row=1, col=1)
+    fig.update_xaxes(title_text="Temperatura (°C)", row=2, col=1)
+    fig.update_xaxes(title_text="Días", row=2, col=2)
+    fig.update_xaxes(title_text="Mes", row=3, col=1)
+    fig.update_yaxes(title_text="Velocidad del Viento (km/h)", row=3, col=1)
+
+    return fig
+
+# Generar y mostrar dashboard
+dashboard_recomendaciones = crear_dashboard_recomendaciones()
+dashboard_recomendaciones.show()
+
+# Guardar en HTML
+dashboard_recomendaciones.write_html("dashboard_recomendaciones.html")
+
+"""# Conclusiones y Recomendaciones
+
+## Conclusiones Principales
+
+### 1. Patrones Climáticos
+- Se identificaron 4 clusters climáticos distintos mediante análisis no supervisado
+- Las temperaturas muestran patrones estacionales consistentes
+- La precipitación varía significativamente por ubicación y estación
+
+### 2. Predicción de Lluvia
+- El modelo Random Forest alcanza una precisión significativa
+- Las variables más predictivas son:
+  - Humedad (9am y 3pm)
+  - Presión atmosférica
+  - Temperatura máxima
+  - Velocidad del viento
+
+### 3. Tendencias Geográficas
+- Las zonas costeras muestran mayor variabilidad climática
+- Se identificaron patrones de viento consistentes por región
+- Las temperaturas extremas se concentran en ubicaciones específicas
+
+## Recomendaciones Estratégicas
+
+### 1. Gestión de Recursos Hídricos
+- Implementar sistemas de recolección de agua en estaciones lluviosas
+- Desarrollar infraestructura de almacenamiento en zonas con alta variabilidad
+- Establecer protocolos de gestión según predicciones del modelo
+
+### 2. Planificación Urbana
+- Adaptar diseños arquitectónicos según clusters climáticos
+- Implementar sistemas de climatización eficientes
+- Desarrollar espacios verdes estratégicos
+
+### 3. Energía Renovable
+- Instalar parques eólicos en ubicaciones con vientos óptimos
+- Aprovechar la alta radiación solar en zonas áridas
+- Diversificar fuentes de energía según patrones climáticos
+
+### 4. Agricultura
+- Planificar cultivos según clusters climáticos
+- Implementar sistemas de riego inteligente
+- Utilizar predicciones de lluvia para optimizar recursos
+
+## Próximos Pasos
+1. Integrar datos en tiempo real
+2. Desarrollar sistemas de alerta temprana
+3. Expandir el análisis a más variables climáticas
+4. Implementar monitoreo continuo de patrones
+
 """
