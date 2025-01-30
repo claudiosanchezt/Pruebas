@@ -215,6 +215,42 @@ df[columnas_categoricas] = df[columnas_categoricas].fillna('Desconocido')
 
 """
 
+# 1. Distribución de Lluvia por Predicción
+print("Generando gráfico de distribución de lluvia...")
+print("- Muestra la relación entre la cantidad de lluvia actual y la predicción para mañana")
+print("- Los boxplots indican: mediana, cuartiles y valores atípicos")
+print("- Permite identificar patrones de precipitación según la predicción")
+
+# 2. Análisis de Temperatura
+print("\nGenerando scatter plot de temperaturas...")
+print("- Visualiza la relación entre temperaturas mínimas y máximas")
+print("- Los colores indican si llueve al día siguiente")
+print("- Ayuda a identificar rangos de temperatura asociados con lluvia")
+
+# 3. Promedio de Lluvia Mensual
+print("\nGenerando gráfico de lluvia mensual...")
+print("- Muestra la tendencia de precipitaciones a lo largo del año")
+print("- Los puntos indican el promedio de lluvia para cada mes")
+print("- Identifica meses con mayor y menor precipitación")
+
+# 4. Temperatura por Estación
+print("\nGenerando gráfico de temperatura por estación...")
+print("- Visualiza la temperatura máxima promedio en cada estación")
+print("- Barras representan: Verano(1), Otoño(2), Invierno(3), Primavera(4)")
+print("- Permite comparar variaciones estacionales")
+
+# 5. Lluvia por Día de la Semana
+print("\nGenerando boxplot de lluvia por día...")
+print("- Muestra la distribución de precipitaciones según el día")
+print("- Identifica patrones semanales de lluvia")
+print("- Incluye valores atípicos y medianas")
+
+# 6. Evolución de Temperaturas
+print("\nGenerando gráfico de evolución temporal...")
+print("- Muestra tendencias de temperatura a largo plazo")
+print("- Líneas representan promedios de temperatura mínima y máxima")
+print("- Permite identificar cambios climáticos a lo largo de los años")
+
 # Crear visualizaciones para patrones climáticos clave
 plt.figure(figsize=(12, 6))
 sns.boxplot(x='RainTomorrow', y='Rainfall', data=df)
@@ -315,6 +351,30 @@ y = (df['RainTomorrow'] == 'Yes').astype(int)
 
 # Dividir los datos
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+print("Iniciando selección de características para el modelo predictivo...")
+print("\nCaracterísticas seleccionadas:")
+print("1. Temperaturas: MinTemp, MaxTemp, Temp9am, Temp3pm")
+print("2. Precipitación: Rainfall")
+print("3. Viento: WindSpeed9am, WindSpeed3pm")
+print("4. Humedad: Humidity9am, Humidity3pm")
+print("5. Presión: Pressure9am, Pressure3pm")
+
+print("\nPreparando variables:")
+print(f"- Total de características: {len(caracteristicas)}")
+print("- Variable objetivo: RainTomorrow (convertida a binaria 0/1)")
+
+print("\nDivisión del conjunto de datos:")
+print("- Conjunto de entrenamiento: 80% de los datos")
+print("- Conjunto de prueba: 20% de los datos")
+print("- Random state: 42 (para reproducibilidad)")
+
+# Añadir información sobre las dimensiones de los conjuntos
+print(f"\nDimensiones de los conjuntos:")
+print(f"X_train: {X_train.shape}")
+print(f"X_test: {X_test.shape}")
+print(f"y_train: {y_train.shape}")
+print(f"y_test: {y_test.shape}")
 
 """## 5. Preparación del Modelo
 
@@ -434,7 +494,49 @@ for i in range(len(matriz_correlacion.columns)):
         if abs(matriz_correlacion.iloc[i,j]) > 0.3:
             print(f"{variables_importantes[matriz_correlacion.columns[i]]} y {variables_importantes[matriz_correlacion.columns[j]]}: {matriz_correlacion.iloc[i,j]:.2f}")
 
-"""## 5. Modelado Predictivo
+print("=== PROCESAMIENTO TEMPORAL DE DATOS ===")
+print("Transformando fechas y creando variables temporales:")
+print("- Creando columna de Estación (1-4)")
+print("- Extrayendo Mes (1-12)")
+print("- Extrayendo Año")
+print(f"Rango de fechas: {df['Date'].min()} a {df['Date'].max()}\n")
+
+print("=== VARIABLES PRINCIPALES ANALIZADAS ===")
+for key, value in variables_importantes.items():
+    print(f"- {key}: {value}")
+
+print("\n=== ANÁLISIS ESTACIONAL ===")
+print("Estadísticas por estación del año:")
+for estacion, datos in resumen_estacional.iterrows():
+    print(f"\n{nombre_estacion[estacion]}:")
+    for var in variables_importantes.keys():
+        print(f"- {variables_importantes[var]}: {datos[var]:.2f}")
+
+print("\n=== ANÁLISIS MENSUAL DE PRECIPITACIONES ===")
+print("Distribución mensual de días con/sin lluvia:")
+for mes in range(1, 13):
+    total_dias = len(df[df['Mes'] == mes])
+    dias_lluvia = len(df[(df['Mes'] == mes) & (df['RainToday'] == 'Yes')])
+    porcentaje = (dias_lluvia/total_dias) * 100
+    print(f"Mes {mes}: {porcentaje:.1f}% días lluviosos")
+
+print("\n=== ANÁLISIS DE TEMPERATURAS ANUALES ===")
+print("Resumen de temperaturas extremas por año:")
+for año in extremos_temp.index:
+    print(f"\nAño {año}:")
+    print(f"- Máxima más alta: {extremos_temp.loc[año, ('MaxTemp', 'max')]:.1f}°C")
+    print(f"- Mínima más baja: {extremos_temp.loc[año, ('MinTemp', 'min')]:.1f}°C")
+
+print("\n=== ANÁLISIS DE CORRELACIONES ===")
+print("Correlaciones significativas encontradas:")
+for i, var1 in enumerate(variables_importantes.keys()):
+    for j, var2 in enumerate(variables_importantes.keys()):
+        if i < j:
+            corr = matriz_correlacion.loc[var1, var2]
+            if abs(corr) > 0.3:
+                print(f"{variables_importantes[var1]} - {variables_importantes[var2]}: {corr:.2f}")
+
+"""## 6. Modelado Predictivo
   # Análisis Estadístico de Datos Meteorológicos
 
   ## 1. Análisis por Estación
@@ -484,6 +586,31 @@ for i in range(len(matriz_correlacion.columns)):
 """
 
 def crear_dashboard_meteorologico():
+    print("=== CREACIÓN DE DASHBOARD METEOROLÓGICO INTERACTIVO ===")
+    print("\nEstructura del Dashboard:")
+    print("1. Panel Superior:")
+    print("   - Temperaturas por Estación (Gráfico combinado)")
+    print("   - Distribución de Días Lluviosos (Gráfico circular)")
+    print("\n2. Panel Central:")
+    print("   - Evolución Temporal de Precipitaciones")
+    print("   - Distribución de Lluvia y Rangos de Temperatura")
+    print("\n3. Panel Inferior:")
+    print("   - Promedios Mensuales")
+    print("   - Indicadores de Temperatura")
+
+    print("\nCaracterísticas Interactivas:")
+    print("- Menú de Selección con filtros:")
+    print("  * Todas las Métricas")
+    print("  * Temperaturas")
+    print("  * Precipitaciones")
+    print("  * Evolución Anual")
+
+    print("\nDimensiones y Especificaciones:")
+    print(f"- Altura: 1800px")
+    print(f"- Ancho: 1200px")
+    print("- Template: plotly_white")
+    print("- Leyenda: Horizontal en la parte superior")
+
     # Crear la estructura del dashboard con subplots
     fig = make_subplots(
         rows=5, cols=2,
@@ -735,6 +862,23 @@ dashboard.show()
 # Guardar en HTML para Jupyter/Colab
 dashboard.write_html("dashboard_meteorologico.html")
 
+print("\n=== COMPONENTES DEL DASHBOARD ===")
+print("1. Gráficos de Temperatura:")
+print("   - Barras para máximas")
+print("   - Líneas para mínimas")
+print("   - Scatter plot para rangos")
+
+print("\n2. Gráficos de Precipitación:")
+print("   - Box plot para distribución")
+print("   - Líneas temporales")
+print("   - Promedios mensuales")
+
+print("\n3. Indicadores:")
+print("   - Gauge para temperatura máxima")
+print("   - Gauge para temperatura mínima")
+
+print("\nArchivo generado: dashboard_meteorologico.html")
+
 """## 6. Análisis Estadístico por Períodos Temporales
 
 ### 6.1 Variables Analizadas
@@ -794,6 +938,40 @@ plt.title('Clusters Climáticos')
 plt.xlabel('Temperatura Mínima')
 plt.ylabel('Temperatura Máxima')
 plt.show()
+
+print("=== ANÁLISIS DE PATRONES CLIMÁTICOS CON K-MEANS ===")
+print("\nCaracterísticas seleccionadas para clustering:")
+for i, feature in enumerate(features_clustering, 1):
+    print(f"{i}. {feature}")
+
+print("\nProceso de preparación de datos:")
+print("- Estandarización de variables")
+print(f"- Dimensiones del conjunto de datos: {X_scaled.shape}")
+
+print("\nConfiguración del modelo K-means:")
+print("- Número de clusters: 4")
+print("- Random state: 42")
+
+# Análisis de clusters
+cluster_sizes = df['Cluster'].value_counts()
+print("\nDistribución de clusters:")
+for cluster in range(4):
+    size = cluster_sizes[cluster]
+    percentage = (size / len(df)) * 100
+    print(f"Cluster {cluster}: {size} elementos ({percentage:.1f}%)")
+
+# Características de los clusters
+print("\nCaracterísticas promedio por cluster:")
+cluster_means = df.groupby('Cluster')[features_clustering].mean()
+for cluster in range(4):
+    print(f"\nCluster {cluster}:")
+    for feature in features_clustering:
+        print(f"- {feature}: {cluster_means.loc[cluster, feature]:.2f}")
+
+print("\nVisualización generada:")
+print("- Eje X: Temperatura Mínima")
+print("- Eje Y: Temperatura Máxima")
+print("- Color: Identificador de Cluster")
 
 """# Análisis de Patrones Climáticos usando K-means
 
